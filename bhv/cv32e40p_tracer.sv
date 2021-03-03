@@ -148,6 +148,11 @@ module cv32e40p_tracer
   logic        insn_ebreak;
   logic [31:0] insn_pc;
   logic [31:0] insn_val;
+  logic [5:0]  insn_regs_write_addr[1:0];
+  logic [31:0] insn_regs_write_data[1:0];
+  logic [1:0]  insn_regs_write_valid;
+  bit [63:0]   insn_order = 1;
+
   reg_t insn_regs_write[$];
 
   instr_trace_t trace_q[$];
@@ -241,6 +246,13 @@ module cv32e40p_tracer
     insn_val        = trace_retire.instr;
     insn_wb_bypass  = trace_retire.wb_bypass;
 
+    // Temporary unpacking of insn
+    insn_regs_write_valid = 0;
+    foreach (insn_regs_write[i]) begin
+      insn_regs_write_valid[i] = 1;
+      insn_regs_write_addr[i] = insn_regs_write[i].addr;
+      insn_regs_write_data[i] = insn_regs_write[i].value;
+    end
     trace_retire.printInstrTrace();
 
     ->retire;
@@ -248,6 +260,8 @@ module cv32e40p_tracer
     @(ovp_retire);
     `endif
     #0.1ns;
+
+    insn_order++;
   end
 
   // EX stage
